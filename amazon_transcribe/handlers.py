@@ -13,6 +13,7 @@
 
 
 from amazon_transcribe.model import TranscriptEvent, TranscriptResultStream
+from amazon_transcribe.model import UtteranceEvent, CategoryEvent
 
 
 class TranscriptResultStreamHandler:
@@ -26,9 +27,27 @@ class TranscriptResultStreamHandler:
         async for event in self._transcript_result_stream:
             if isinstance(event, TranscriptEvent):
                 await self.handle_transcript_event(event)
+            if isinstance(event, UtteranceEvent):
+                await self.handle_utterance_event(event)
+            if isinstance(event, CategoryEvent):
+                await self.handle_category_event(event)
 
     async def handle_transcript_event(self, transcript_event: TranscriptEvent):
         """Specific handling for TranscriptionEvent responses from Amazon Transcribe.
+
+        This should be implemented by the end user with desired data handling.
+        """
+        raise NotImplementedError
+
+    async def handle_utterance_event(self, utterance_event: UtteranceEvent):
+        """Specific handling for UtteranceEvent responses from Amazon Transcribe Call Analytics.
+
+        This should be implemented by the end user with desired data handling.
+        """
+        raise NotImplementedError
+
+    async def handle_category_event(self, category_event: CategoryEvent):
+        """Specific handling for CategoryEvent responses from Amazon Transcribe Call Analytics.
 
         This should be implemented by the end user with desired data handling.
         """

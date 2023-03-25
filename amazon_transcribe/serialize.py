@@ -13,6 +13,7 @@
 
 
 from typing import Any, Dict, Tuple, Optional
+import json
 
 from amazon_transcribe.request import Request
 from amazon_transcribe.structures import BufferableByteStream
@@ -21,7 +22,9 @@ from amazon_transcribe.exceptions import SerializerException
 from amazon_transcribe.model import (
     AudioEvent,
     StartStreamTranscriptionRequest,
+    StartCallAnalyticsStreamTranscriptionRequest,
     BaseEvent,
+    ConfigurationEvent,
 )
 
 
@@ -112,6 +115,24 @@ class TranscribeStreamingSerializer:
             )
         )
         headers.update(
+            self._serialize_str_header(
+                "content-identification-type",
+                request_shape.content_identification_type,
+            )
+        )
+        headers.update(
+            self._serialize_str_header(
+                "content-redaction-type",
+                request_shape.content_redaction_type,
+            )
+        )
+        headers.update(
+            self._serialize_str_header(
+                "pii-entity-types",
+                request_shape.pii_entity_types,
+            )
+        )
+        headers.update(
             self._serialize_bool_header(
                 "enable-partial-results-stabilization",
                 request_shape.enable_partial_results_stabilization,
@@ -127,6 +148,131 @@ class TranscribeStreamingSerializer:
             self._serialize_str_header(
                 "language-model-name",
                 request_shape.language_model_name,
+            )
+        )
+        headers.update(
+            self._serialize_str_header(
+                "identify-language",
+                request_shape.identify_language,
+            )
+        )
+        headers.update(
+            self._serialize_str_header(
+                "language-options",
+                request_shape.language_options,
+            )
+        )
+        headers.update(
+            self._serialize_str_header(
+                "preferred-language",
+                request_shape.preferred_language,
+            )
+        )
+        headers.update(
+            self._serialize_str_header(
+                "vocabulary-names",
+                request_shape.vocabulary_names,
+            )
+        )
+        headers.update(
+            self._serialize_str_header(
+                "vocabulary-filter-names",
+                request_shape.vocabulary_filter_names,
+            )
+        )
+
+        _add_required_headers(endpoint, headers)
+
+        body = BufferableByteStream()
+
+        request = Request(
+            endpoint=endpoint,
+            path=request_uri,
+            method=method,
+            headers=headers,
+            body=body,
+        )
+        return request
+
+    def serialize_start_call_analytics_stream_transcription_request(
+        self, endpoint: str, request_shape: StartCallAnalyticsStreamTranscriptionRequest
+    ) -> Request:
+
+        method = "POST"
+        request_uri = "/call-analytics-stream-transcription"
+
+        headers: Dict[str, str] = {}
+        headers.update(self._serialize_str_header("language-code", request_shape.language_code))
+        headers.update(
+            self._serialize_int_header(
+                "sample-rate",
+                request_shape.media_sample_rate_hz
+            )
+        )
+        headers.update(
+            self._serialize_str_header(
+                "media-encoding",
+                request_shape.media_encoding
+            )
+        )
+        headers.update(
+            self._serialize_str_header(
+                "vocabulary-name",
+                request_shape.vocabulary_name
+            )
+        )
+        headers.update(
+            self._serialize_str_header(
+                "session-id",
+                request_shape.session_id
+            )
+        )
+        headers.update(
+            self._serialize_str_header(
+                "vocabulary-filter-name",
+                request_shape.vocab_filter_name,
+            )
+        )
+        headers.update(
+            self._serialize_str_header(
+                "vocabulary-filter-method",
+                request_shape.vocab_filter_method,
+            )
+        )
+        headers.update(
+            self._serialize_str_header(
+                "language-model-name",
+                request_shape.language_model_name,
+            )
+        )
+        headers.update(
+            self._serialize_bool_header(
+                "enable-partial-results-stabilization",
+                request_shape.enable_partial_results_stabilization,
+            )
+        )
+        headers.update(
+            self._serialize_str_header(
+                "partial-results-stability",
+                request_shape.partial_results_stability,
+            )
+        )
+        headers.update(
+            self._serialize_str_header(
+                "content-identification-type",
+                request_shape.content_identification_type,
+            )
+        )
+        headers.update(
+            self._serialize_str_header(
+                "content-redaction-type",
+                request_shape.content_redaction_type,
+            )
+        )
+        headers.update(
+            self._serialize_str_header(
+                "pii-entity-types",
+                request_shape.pii_entity_types,
             )
         )
 
@@ -158,6 +304,8 @@ class AudioEventSerializer(EventSerializer):
     def serialize(self, event: BaseEvent) -> SERIALIZED_EVENT:
         if isinstance(event, AudioEvent):
             return self._serialize_audio_event(event)
+        if isinstance(event, ConfigurationEvent):
+            return self._serialize_configuration_event(event)
         raise SerializerException(f'Unexpected event type encountered: "{type(event)}"')
 
     def _serialize_audio_event(self, audio_event: AudioEvent):
@@ -167,3 +315,13 @@ class AudioEventSerializer(EventSerializer):
             ":content-type": "application/octet-stream",
         }
         return headers, audio_event.payload
+
+    def _serialize_configuration_event(self, configuration_event: ConfigurationEvent):
+        headers = {
+            ":message-type": "event",
+            ":event-type": "ConfigurationEvent",
+            ":content-type": "application/json",
+        }
+        payload = json.dumps(configuration_event, default=lambda x: x.__json__).encode("utf-8")
+
+        return headers, payload
